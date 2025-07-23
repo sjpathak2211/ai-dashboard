@@ -260,7 +260,7 @@
 
 .modal-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 1rem;
   padding: 1.5rem 2rem;
   border-top: 1px solid var(--gray-200);
@@ -271,6 +271,43 @@
 .modal-footer button {
   min-width: 120px;
   justify-content: center;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.modal-footer button.secondary {
+  background: transparent;
+  color: var(--gray-700);
+  border: 1px solid var(--gray-300);
+}
+
+.modal-footer button.secondary:hover {
+  background: var(--gray-100);
+  border-color: var(--gray-400);
+}
+
+.modal-footer button.primary {
+  background: var(--gradient-primary);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.modal-footer button.primary:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.modal-footer button.primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .shortcut-story {

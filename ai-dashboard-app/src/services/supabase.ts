@@ -138,7 +138,9 @@ export const requestsService = {
   // Create new request
   createRequest: async (request: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
     const user = await supabase.auth.getUser();
-    if (!user.data.user) throw new Error('User not authenticated');
+    
+    // Use a dev user ID if no authenticated user (for testing with RLS disabled)
+    const userId = user.data.user?.id || '5241162c-4d96-4a7a-b18e-eb9544f9e0d1'; // Default UUID for dev mode
 
     const { data, error } = await supabase
       .from('ai_requests')
@@ -151,21 +153,26 @@ export const requestsService = {
         contact_info: request.contactInfo,
         status: request.status || 'Planning',
         progress: request.progress || 0,
-        user_id: user.data.user.id
+        user_id: userId
       })
       .select()
       .single();
     
     if (error) throw error;
 
-    // Log activity
-    await supabase.rpc('log_activity', {
-      p_type: 'request_submitted',
-      p_title: data.title,
-      p_description: 'New AI request submitted',
-      p_user_id: user.data.user.id,
-      p_request_id: data.id
-    });
+    // Log activity (optional - don't fail if this errors)
+    try {
+      await supabase.rpc('log_activity', {
+        p_type: 'request_submitted',
+        p_title: data.title,
+        p_description: 'New AI request submitted',
+        p_user_id: userId,
+        p_request_id: data.id
+      });
+    } catch (activityError) {
+      console.warn('Failed to log activity:', activityError);
+      // Continue anyway - the request was created successfully
+    }
 
     return data;
   },

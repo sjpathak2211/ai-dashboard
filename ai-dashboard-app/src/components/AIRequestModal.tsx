@@ -93,11 +93,13 @@ const AIRequestModal: React.FC<AIRequestModalProps> = ({ isOpen, onClose, onSubm
     setIsSubmitting(true);
     try {
       // Save to Supabase
-      await requestsService.createRequest({
+      const savedRequest = await requestsService.createRequest({
         ...formData,
         status: 'Planning',
         progress: 0
       });
+      
+      console.log('Request saved successfully:', savedRequest);
       
       // Call the original onSubmit for any additional handling
       onSubmit({
@@ -115,10 +117,16 @@ const AIRequestModal: React.FC<AIRequestModalProps> = ({ isOpen, onClose, onSubm
         contactInfo: user?.email || ''
       });
       
+      // Reset errors
+      setErrors({});
+      
+      // Close modal
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to submit request:', error);
-      alert('Failed to submit request. Please try again.');
+      const errorMessage = error?.message || 'Failed to submit request. Please try again.';
+      alert(errorMessage);
+      // Don't close modal on error
     } finally {
       setIsSubmitting(false);
     }
@@ -298,9 +306,10 @@ const AIRequestModal: React.FC<AIRequestModalProps> = ({ isOpen, onClose, onSubm
                   <button 
                     type="submit"
                     className="primary"
+                    disabled={isSubmitting}
                   >
                     <Send size={16} />
-                    Submit Request
+                    {isSubmitting ? 'Submitting...' : 'Submit Request'}
                   </button>
                 </div>
               </form>

@@ -16,7 +16,7 @@ import {
   ChevronDown,
   ChevronUp
 } from 'lucide-react';
-import type { AIRequest, BacklogStatus, ProjectStatus, User, BacklogInfo, Project, Department, Priority } from '../types';
+import type { AIRequest, BacklogStatus, ProjectStatus, User, BacklogInfo, Department, Priority } from '../types';
 import { requestsService, backlogService, subscriptions, projectsService } from '../services/supabase';
 import './AdminConsole.css';
 
@@ -27,22 +27,21 @@ interface AdminConsoleProps {
 
 const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
   const [requests, setRequests] = useState<AIRequest[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [filteredRequests, setFilteredRequests] = useState<AIRequest[]>([]);
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<Department | 'All'>('All');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'All'>('All');
   const [statusFilter, setStatusFilter] = useState<ProjectStatus | 'All'>('All');
   const [editingRequest, setEditingRequest] = useState<string | null>(null);
   const [editedNotes, setEditedNotes] = useState<{ [key: string]: string }>({});
+  const [requestUpdates, setRequestUpdates] = useState<{ [key: string]: Array<{ text: string; timestamp: Date }> }>({});
+  const [newUpdate, setNewUpdate] = useState<{ [key: string]: string }>({});
   const [backlogInfo, setBacklogInfo] = useState<BacklogInfo>({
     status: 'busy',
     message: 'Currently working on several high-priority projects.',
     estimatedWaitTime: '2-3 weeks'
   });
   const [expandedRequests, setExpandedRequests] = useState<Set<string>>(new Set());
-  const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingBacklog, setIsSavingBacklog] = useState(false);
 
@@ -50,13 +49,11 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [allRequests, allProjects, backlogData] = await Promise.all([
+        const [allRequests, backlogData] = await Promise.all([
           requestsService.getAllRequests(),
-          projectsService.getProjects(),
           backlogService.getBacklogStatus()
         ]);
         setRequests(allRequests);
-        setProjects(allProjects);
         setBacklogInfo(backlogData);
       } catch (error) {
         console.error('Failed to fetch admin data:', error);
@@ -72,17 +69,12 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
       requestsService.getAllRequests().then(setRequests);
     });
 
-    const projectsChannel = subscriptions.subscribeToProjects(() => {
-      projectsService.getProjects().then(setProjects);
-    });
-
     const backlogChannel = subscriptions.subscribeToBacklogStatus(() => {
       backlogService.getBacklogStatus().then(setBacklogInfo);
     });
 
     return () => {
       subscriptions.unsubscribe(requestsChannel);
-      subscriptions.unsubscribe(projectsChannel);
       subscriptions.unsubscribe(backlogChannel);
     };
   }, []);
@@ -124,25 +116,6 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
     setFilteredRequests(filtered);
   }, [requests, searchTerm, departmentFilter, priorityFilter, statusFilter]);
 
-  useEffect(() => {
-    // Filter projects based on search and status
-    let filtered = projects;
-    
-    if (searchTerm) {
-      filtered = filtered.filter(project => 
-        project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.assignedTeam.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.department.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-    
-    if (statusFilter !== 'All') {
-      filtered = filtered.filter(project => project.status === statusFilter);
-    }
-    
-    setFilteredProjects(filtered);
-  }, [projects, searchTerm, statusFilter]);
 
   const handleStatusChange = async (requestId: string, newStatus: ProjectStatus) => {
     try {
@@ -224,17 +197,6 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
     });
   };
 
-  const toggleProjectExpanded = (projectId: string) => {
-    setExpandedProjects(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(projectId)) {
-        newSet.delete(projectId);
-      } else {
-        newSet.add(projectId);
-      }
-      return newSet;
-    });
-  };
 
   const handleConvertToProject = async (request: AIRequest) => {
     try {
@@ -248,12 +210,8 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
       });
       
       // Refresh data
-      const [updatedRequests, updatedProjects] = await Promise.all([
-        requestsService.getAllRequests(),
-        projectsService.getProjects()
-      ]);
+      const updatedRequests = await requestsService.getAllRequests();
       setRequests(updatedRequests);
-      setProjects(updatedProjects);
       
       alert('Successfully converted request to project!');
     } catch (error) {
@@ -262,33 +220,6 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
     }
   };
 
-  const handleProjectStatusChange = async (projectId: string, newStatus: ProjectStatus) => {
-    try {
-      await projectsService.updateProject(projectId, { status: newStatus });
-      setProjects(prev => prev.map(proj => 
-        proj.id === projectId 
-          ? { ...proj, status: newStatus }
-          : proj
-      ));
-    } catch (error) {
-      console.error('Failed to update project status:', error);
-      alert('Failed to update project status. Please try again.');
-    }
-  };
-
-  const handleProjectProgressChange = async (projectId: string, newProgress: number) => {
-    try {
-      await projectsService.updateProject(projectId, { progress: newProgress });
-      setProjects(prev => prev.map(proj => 
-        proj.id === projectId 
-          ? { ...proj, progress: newProgress }
-          : proj
-      ));
-    } catch (error) {
-      console.error('Failed to update project progress:', error);
-      alert('Failed to update project progress. Please try again.');
-    }
-  };
 
   const getStatusIcon = (status: ProjectStatus) => {
     switch (status) {
@@ -646,6 +577,62 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ user, onBack }) => {
                         Convert to Project
                       </button>
                     )}
+                  </div>
+
+                  {/* Update Timeline */}
+                  <div className="update-timeline">
+                    <h4>Updates</h4>
+                    <div className="update-input">
+                      <input
+                        type="text"
+                        placeholder="Add an update (1-2 sentences)..."
+                        value={newUpdate[request.id] || ''}
+                        onChange={(e) => setNewUpdate({ ...newUpdate, [request.id]: e.target.value })}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && newUpdate[request.id]?.trim()) {
+                            const updates = requestUpdates[request.id] || [];
+                            setRequestUpdates({
+                              ...requestUpdates,
+                              [request.id]: [...updates, { text: newUpdate[request.id].trim(), timestamp: new Date() }]
+                            });
+                            setNewUpdate({ ...newUpdate, [request.id]: '' });
+                          }
+                        }}
+                      />
+                      <button 
+                        onClick={() => {
+                          if (newUpdate[request.id]?.trim()) {
+                            const updates = requestUpdates[request.id] || [];
+                            setRequestUpdates({
+                              ...requestUpdates,
+                              [request.id]: [...updates, { text: newUpdate[request.id].trim(), timestamp: new Date() }]
+                            });
+                            setNewUpdate({ ...newUpdate, [request.id]: '' });
+                          }
+                        }}
+                        className="add-update-btn"
+                        disabled={!newUpdate[request.id]?.trim()}
+                      >
+                        Add Update
+                      </button>
+                    </div>
+                    
+                    <div className="timeline-container">
+                      {(requestUpdates[request.id] || []).slice(-6).reverse().map((update, index) => (
+                        <div key={index} className="timeline-item">
+                          <div className="timeline-marker"></div>
+                          <div className="timeline-content">
+                            <p>{update.text}</p>
+                            <span className="timeline-date">
+                              {update.timestamp.toLocaleDateString()} at {update.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                      {(!requestUpdates[request.id] || requestUpdates[request.id].length === 0) && (
+                        <p className="no-updates">No updates yet</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

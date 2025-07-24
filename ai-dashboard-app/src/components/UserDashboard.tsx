@@ -120,7 +120,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
   const progressData = generateProgressData(activeRequests);
 
   const handleEditRequest = (request: AIRequest) => {
-    console.log('Edit button clicked for request:', request);
     setEditingRequest(request);
     setIsEditModalOpen(true);
   };
@@ -196,8 +195,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.log('Button clicked!');
-                        alert('Edit button clicked for: ' + request.title);
                         handleEditRequest(request);
                       }}
                       title="Edit request"

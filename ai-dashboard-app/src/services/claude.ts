@@ -11,12 +11,13 @@ export interface FormFields {
 
 // Get the API URL based on environment
 const getApiUrl = () => {
-  // Use environment variable for production API URL
+  // Use Vercel deployment URL for production
   if (import.meta.env.PROD) {
-    // You can set VITE_API_URL in your GitHub Actions secrets
-    // or in your deployment platform's environment variables
-    return import.meta.env.VITE_API_URL || null;
+    // This will be set as a GitHub secret
+    return import.meta.env.VITE_MARSHAL_API_URL || null;
   }
+  
+  // Local development
   return '/api/marshal';
 };
 

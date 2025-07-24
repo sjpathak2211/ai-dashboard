@@ -1,19 +1,23 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import Login from './components/Login';
-import DemoLogin from './components/DemoLogin';
-import Header from './components/Header';
-import DashboardOverview from './components/DashboardOverview';
-import UserDashboard from './components/UserDashboard';
-import ProjectsSection from './components/ProjectsSection';
-import AIRequestModal from './components/AIRequestModal';
-import AdminConsole from './components/AdminConsole';
-import { getUserRequests, getUserMetrics } from './data/mockData';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import type { AIRequest, User, Project } from './types';
-import { signOut, DEV_BYPASS_USER } from './services/auth';
+import { signOut } from './services/auth';
 import { supabase, authService, projectsService, subscriptions } from './services/supabase';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import './App.css';
+
+// Import critical components directly for faster initial load
+import Login from './components/Login';
+import Header from './components/Header';
+
+// Lazy load heavy components
+const DashboardOverview = lazy(() => import('./components/DashboardOverview'));
+const UserDashboard = lazy(() => import('./components/UserDashboard'));
+const ProjectsSection = lazy(() => import('./components/ProjectsSection'));
+const AIRequestModal = lazy(() => import('./components/AIRequestModal'));
+const AdminConsole = lazy(() => import('./components/AdminConsole'));
+
+// Lazy load data functions
+const dataModule = () => import('./data/mockData');
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,6 +25,11 @@ function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAdminConsole, setShowAdminConsole] = useState(false);
+  
+  // Move these hooks up here - they must be called before any conditional returns
+  const [userRequests, setUserRequests] = useState<AIRequest[]>([]);
+  const [userMetrics, setUserMetrics] = useState<any>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
 
   // Check for existing session on app load
   useEffect(() => {
@@ -28,28 +37,57 @@ function App() {
     const checkAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('Session check:', session?.user ? 'User found' : 'No user');
+        
         if (session?.user) {
-          const dbUser = await authService.getCurrentUser();
-          if (dbUser) {
-            setUser(dbUser);
+          console.log('Attempting to get user from database...');
+          
+          // Add timeout for initial load too
+          const timeoutPromise = new Promise<null>((resolve) => {
+            setTimeout(() => {
+              console.log('Initial getCurrentUser timeout - using fallback user');
+              resolve(null);
+            }, 500); // 500ms timeout for initial load
+          });
+          
+          try {
+            const dbUser = await Promise.race([authService.getCurrentUser(), timeoutPromise]);
+            if (dbUser) {
+              console.log('Database user found:', dbUser.email);
+              setUser(dbUser);
+            } else {
+              console.log('Using fallback user for initial load');
+              // Create fallback user from session
+              const fallbackUser = {
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+                picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
+                isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+              };
+              setUser(fallbackUser);
+            }
+          } catch (getUserError) {
+            console.error('Error getting user:', getUserError);
+            // Create fallback user
+            const fallbackUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'User',
+              picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
+              isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+            };
+            setUser(fallbackUser);
           }
         } else {
-          // Fallback to saved user or dev bypass
-          const savedUser = localStorage.getItem('ascendco_user');
-          if (savedUser) {
-            try {
-              setUser(JSON.parse(savedUser));
-            } catch (error) {
-              console.error('Error loading saved user:', error);
-              localStorage.removeItem('ascendco_user');
-            }
-          } else if (!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) {
-            // Use dev bypass if Supabase not configured
-            setUser(DEV_BYPASS_USER);
-          }
+          console.log('No session found');
+          // Clear any stale localStorage data
+          localStorage.removeItem('ascendco_user');
         }
       } catch (error) {
         console.error('Auth check error:', error);
+        // Clear session on error
+        await supabase.auth.signOut();
       } finally {
         setIsLoading(false);
       }
@@ -59,12 +97,52 @@ function App() {
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
+      console.log('Auth state change:', event, session?.user?.email);
       if (event === 'SIGNED_IN' && session?.user) {
-        const dbUser = await authService.getCurrentUser();
-        if (dbUser) {
-          setUser(dbUser);
+        console.log('Processing sign in for:', session.user.email);
+        
+        // Add timeout to prevent infinite loading
+        const timeoutPromise = new Promise<null>((resolve) => {
+          setTimeout(() => {
+            console.log('getCurrentUser timeout - using fallback user');
+            resolve(null);
+          }, 1000); // 1 second timeout
+        });
+        
+        const userPromise = authService.getCurrentUser();
+        
+        try {
+          const dbUser = await Promise.race([userPromise, timeoutPromise]);
+          
+          if (dbUser) {
+            console.log('Database user loaded:', dbUser.email, 'isAdmin:', dbUser.isAdmin);
+            setUser(dbUser);
+          } else {
+            console.log('Using fallback user due to timeout or error');
+            // Create a fallback user from session data
+            const fallbackUser = {
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+              picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
+              isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+            };
+            setUser(fallbackUser);
+          }
+        } catch (error) {
+          console.error('Error during user loading:', error);
+          // Create fallback user
+          const fallbackUser = {
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'User',
+            picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
+            isAdmin: session.user.email?.includes('shyam') || session.user.email === 'shyam.pathak@ascendcohealth.com'
+          };
+          setUser(fallbackUser);
         }
       } else if (event === 'SIGNED_OUT') {
+        console.log('User signed out');
         setUser(null);
         localStorage.removeItem('ascendco_user');
       }
@@ -73,7 +151,7 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch projects when user is authenticated
+  // Fetch projects when user is authenticated with a slight delay to prioritize UI
   useEffect(() => {
     const fetchProjects = async () => {
       try {
@@ -85,7 +163,8 @@ function App() {
     };
 
     if (user) {
-      fetchProjects();
+      // Delay project fetch to prioritize initial render
+      const timer = setTimeout(fetchProjects, 100);
 
       // Subscribe to real-time project updates
       const projectsChannel = subscriptions.subscribeToProjects?.((payload) => {
@@ -94,6 +173,7 @@ function App() {
       });
 
       return () => {
+        clearTimeout(timer);
         if (projectsChannel) {
           subscriptions.unsubscribe(projectsChannel);
         }
@@ -101,9 +181,39 @@ function App() {
     }
   }, [user]);
 
+  // Load user-specific data
+  useEffect(() => {
+    if (user) {
+      dataModule()
+        .then(({ getUserRequests, getUserMetrics }) => {
+          const requests = getUserRequests(user.email);
+          const metrics = getUserMetrics(user.email);
+          setUserRequests(requests);
+          setUserMetrics(metrics);
+          setDataLoaded(true);
+        })
+        .catch(error => {
+          console.error('Error loading data module:', error);
+          // Set empty data on error to prevent white screen
+          setUserRequests([]);
+          setUserMetrics({
+            totalRequests: 0,
+            approvedRequests: 0,
+            inProgressRequests: 0,
+            pendingRequests: 0
+          });
+          setDataLoaded(true);
+        });
+    }
+  }, [user]);
 
-  const handleLogin = (userData: User) => {
+  const handleLogin = async (userData: User) => {
+    console.log('handleLogin called with:', userData.email);
+    // For Google OAuth, we'll rely on the Supabase auth state change
+    // to properly set the user after database user creation
     setUser(userData);
+    
+    // Store temporarily in localStorage as backup
     localStorage.setItem('ascendco_user', JSON.stringify(userData));
   };
 
@@ -163,85 +273,108 @@ function App() {
 
   // Show login screen if user is not authenticated
   if (!user) {
-    const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && 
-                                 import.meta.env.VITE_SUPABASE_URL !== 'https://your-project.supabase.co' &&
-                                 import.meta.env.VITE_SUPABASE_ANON_KEY &&
-                                 import.meta.env.VITE_SUPABASE_ANON_KEY !== 'your-anon-key-here';
-    
-    return isSupabaseConfigured ? (
-      <Login onLogin={handleLogin} />
-    ) : (
-      <DemoLogin onLogin={handleLogin} />
+    return (
+      <Suspense fallback={
+        <div className="app-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading...</p>
+        </div>
+      }>
+        <Login onLogin={handleLogin} />
+      </Suspense>
     );
   }
 
   // Show admin console if requested
   if (showAdminConsole && user?.isAdmin) {
-    return <AdminConsole user={user} onBack={handleBackToDashboard} />;
+    return (
+      <Suspense fallback={
+        <div className="app-loading">
+          <div className="loading-spinner"></div>
+          <p>Loading Admin Console...</p>
+        </div>
+      }>
+        <AdminConsole user={user} onBack={handleBackToDashboard} />
+      </Suspense>
+    );
   }
 
-  // Get user-specific data
-  const userRequests = getUserRequests(user.email);
   const hasRequests = userRequests.length > 0;
-  const userMetrics = getUserMetrics(user.email);
+
+  // Show loading until data is ready (with timeout)
+  if (!dataLoaded && user) {
+    // Add a timeout to prevent infinite loading
+    setTimeout(() => {
+      if (!dataLoaded) {
+        console.error('Data loading timeout - setting defaults');
+        setUserRequests([]);
+        setUserMetrics({
+          totalRequests: 0,
+          approvedRequests: 0,
+          inProgressRequests: 0,
+          pendingRequests: 0
+        });
+        setDataLoaded(true);
+      }
+    }, 2000);
+    
+    return (
+      <div className="app-loading">
+        <div className="loading-spinner"></div>
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="app">
-      
-      <Header 
-        onNewRequest={handleNewRequest} 
-        user={user} 
-        onLogout={handleLogout}
-        onAdminClick={user?.isAdmin ? handleAdminClick : undefined}
-      />
+      <Suspense fallback={
+        <div style={{ padding: '20px', textAlign: 'center' }}>
+          <div className="loading-spinner"></div>
+        </div>
+      }>
+        <Header 
+          onNewRequest={handleNewRequest} 
+          user={user} 
+          onLogout={handleLogout}
+          onAdminClick={handleAdminClick}
+        />
+      </Suspense>
       
       <main className="main-content">
         {hasRequests ? (
           <>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+            <Suspense fallback={<div className="metric-card-skeleton" />}>
               <DashboardOverview 
                 metrics={userMetrics} 
               />
-            </motion.div>
+            </Suspense>
             
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-            >
+            <Suspense fallback={<div className="dashboard-skeleton" />}>
               <UserDashboard user={user} />
-            </motion.div>
+            </Suspense>
             
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-            >
+            <Suspense fallback={<div className="projects-skeleton" />}>
               <ProjectsSection projects={projects} />
-            </motion.div>
+            </Suspense>
           </>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="welcome-section"
-          >
+          <Suspense fallback={<div className="dashboard-skeleton" />}>
             <UserDashboard user={user} />
-          </motion.div>
+          </Suspense>
         )}
       </main>
 
-      <AIRequestModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onSubmit={handleSubmitRequest}
-        user={user}
-      />
+      <Suspense fallback={null}>
+        {isModalOpen && (
+          <AIRequestModal
+            isOpen={isModalOpen}
+            onClose={handleCloseModal}
+            onSubmit={handleSubmitRequest}
+            user={user}
+          />
+        )}
+      </Suspense>
     </div>
   );
 }

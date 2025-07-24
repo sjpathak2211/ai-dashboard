@@ -176,16 +176,39 @@
   line-height: 1.5;
 }
 
-/* Google Sign-In button customization */
-.google-signin-wrapper iframe {
-  border-radius: var(--border-radius-md) !important;
-  box-shadow: var(--shadow-sm) !important;
-  transition: all 0.3s ease !important;
+/* Custom Google Sign-In button */
+.google-signin-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: var(--white);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--border-radius-md);
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
 }
 
-.google-signin-wrapper iframe:hover {
-  box-shadow: var(--shadow-md) !important;
-  transform: translateY(-1px) !important;
+.google-signin-button:hover:not(:disabled) {
+  background: var(--gray-50);
+  border-color: var(--gray-300);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.google-signin-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.google-icon {
+  flex-shrink: 0;
 }
 
 @media (max-width: 640px) {

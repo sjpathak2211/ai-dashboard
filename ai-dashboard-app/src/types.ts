@@ -61,7 +61,7 @@ export interface BacklogInfo {
 
 export interface ActivityItem {
   id: string;
-  type: 'project_created' | 'project_updated' | 'request_submitted' | 'project_completed' | 'request_updated';
+  type: 'project_created' | 'project_updated' | 'request_submitted' | 'project_completed' | 'request_updated' | 'status_changed' | 'project_converted';
   title: string;
   description: string;
   timestamp: Date;

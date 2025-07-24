@@ -13,10 +13,11 @@ import {
   Save,
   Calendar,
   MessageSquare,
-  Rocket
+  Rocket,
+  Activity
 } from 'lucide-react';
-import type { AIRequest, BacklogStatus, ProjectStatus, User, BacklogInfo, Department, Priority } from '../types';
-import { requestsService, backlogService, subscriptions, projectsService } from '../services/supabase';
+import type { AIRequest, BacklogStatus, ProjectStatus, User, BacklogInfo, Department, Priority, ActivityItem } from '../types';
+import { requestsService, backlogService, subscriptions, projectsService, activityService } from '../services/supabase';
 import './AdminConsole.css';
 
 interface AdminConsoleProps {
@@ -42,19 +43,22 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSavingBacklog, setIsSavingBacklog] = useState(false);
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [recentActivities, setRecentActivities] = useState<ActivityItem[]>([]);
 
   // Fetch data on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [requestsData, backlogData] = await Promise.all([
+        const [requestsData, backlogData, activitiesData] = await Promise.all([
           requestsService.getAllRequests(),
-          backlogService.getBacklogStatus()
+          backlogService.getBacklogStatus(),
+          activityService.getRecentActivities(20) // Get last 20 activities
         ]);
         
         setRequests(requestsData);
         setFilteredRequests(requestsData);
         setBacklogInfo(backlogData);
+        setRecentActivities(activitiesData);
       } catch (error) {
         console.error('Failed to fetch data:', error);
       } finally {
@@ -73,9 +77,14 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
       backlogService.getBacklogStatus().then(setBacklogInfo);
     });
 
+    const activityChannel = subscriptions.subscribeToActivities(() => {
+      activityService.getRecentActivities(20).then(setRecentActivities);
+    });
+
     return () => {
       if (requestsChannel) subscriptions.unsubscribe(requestsChannel);
       if (backlogChannel) subscriptions.unsubscribe(backlogChannel);
+      if (activityChannel) subscriptions.unsubscribe(activityChannel);
     };
   }, []);
 
@@ -310,6 +319,56 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
             <p>Denied</p>
           </div>
         </div>
+      </div>
+
+      {/* Recent Activity Feed */}
+      <div className="recent-activity-section">
+        <div className="section-header">
+          <div className="header-left">
+            <Activity size={20} />
+            <h2>Recent Activity</h2>
+            <span className="activity-count">({recentActivities.length} activities)</span>
+          </div>
+        </div>
+        
+        <div className="activity-feed">
+          {recentActivities.length > 0 ? (
+            recentActivities.slice(0, 10).map((activity) => (
+              <div key={activity.id} className="activity-item">
+                <div className="activity-icon">
+                  {activity.type === 'request_submitted' && <Rocket size={16} />}
+                  {activity.type === 'status_changed' && <CheckCircle size={16} />}
+                  {activity.type === 'request_updated' && <Save size={16} />}
+                  {(activity.type === 'project_created' || activity.type === 'project_converted') && <BarChart3 size={16} />}
+                  {(!['request_submitted', 'status_changed', 'request_updated', 'project_created', 'project_converted'].includes(activity.type)) && <Activity size={16} />}
+                </div>
+                <div className="activity-content">
+                  <div className="activity-header">
+                    <span className="activity-title">{activity.title}</span>
+                    <span className="activity-time">
+                      {new Date(activity.timestamp).toLocaleString()}
+                    </span>
+                  </div>
+                  <p className="activity-description">{activity.description}</p>
+                  {activity.user && (
+                    <span className="activity-user">
+                      <UserIcon size={12} />
+                      {activity.user}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="no-activities">No recent activities</p>
+          )}
+        </div>
+        
+        {recentActivities.length > 10 && (
+          <div className="show-more">
+            <button className="show-more-button">Show all activities</button>
+          </div>
+        )}
       </div>
 
       {/* Backlog Status Management */}

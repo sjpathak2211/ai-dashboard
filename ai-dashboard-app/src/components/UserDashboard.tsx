@@ -234,7 +234,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
 
         <div className="user-dashboard-section">
           <div className="section-header">
-            <h3>Progress on Active Requests</h3>
+            <h3>Your Request Progress</h3>
             <span className="active-count">{activeRequests.length} active</span>
           </div>
           

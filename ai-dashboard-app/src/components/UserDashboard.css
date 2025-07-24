@@ -355,6 +355,27 @@
   flex: 1;
 }
 
+.edit-request-button {
+  background: none;
+  border: 1px solid var(--gray-300);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: var(--gray-600);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 10;
+}
+
+.edit-request-button:hover {
+  background-color: var(--gray-50);
+  color: var(--primary-blue);
+  border-color: var(--primary-blue);
+}
+
 .request-item h4 {
   font-size: 1.1rem;
   font-weight: 600;

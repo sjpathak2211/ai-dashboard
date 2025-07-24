@@ -26,10 +26,8 @@
         const manualLink = document.getElementById('manual-link');
         manualLink.href = '/ai-dashboard/' + window.location.hash + window.location.search;
         
-        // Redirect after a short delay to allow debugging
-        setTimeout(() => {
-            window.location.href = '/ai-dashboard/' + window.location.hash + window.location.search;
-        }, 1000);
+        // Redirect immediately
+        window.location.href = '/ai-dashboard/' + window.location.hash + window.location.search;
     </script>
 </body>
 </html>

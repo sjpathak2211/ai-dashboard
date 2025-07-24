@@ -4,16 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Redirecting...</title>
-    <script>
-        // This page handles the OAuth redirect and forwards to the correct location
-        const hash = window.location.hash;
-        const searchParams = window.location.search;
-        
-        // Redirect to the app with the auth tokens
-        window.location.href = '/ai-dashboard/' + hash + searchParams;
-    </script>
 </head>
 <body>
-    <p>Authenticating... Please wait.</p>
+    <div style="padding: 20px; font-family: Arial, sans-serif;">
+        <h2>Authenticating...</h2>
+        <p>If you are not redirected automatically, <a href="/ai-dashboard/" id="manual-link">click here</a>.</p>
+        <div id="debug" style="margin-top: 20px; padding: 10px; background: #f0f0f0; font-family: monospace; font-size: 12px;"></div>
+    </div>
+    
+    <script>
+        // Debug information
+        const debug = document.getElementById('debug');
+        debug.innerHTML = `
+            Current URL: ${window.location.href}<br>
+            Hash: ${window.location.hash}<br>
+            Search: ${window.location.search}<br>
+            Redirecting to: /ai-dashboard/${window.location.hash}${window.location.search}
+        `;
+        
+        // Update manual link with tokens
+        const manualLink = document.getElementById('manual-link');
+        manualLink.href = '/ai-dashboard/' + window.location.hash + window.location.search;
+        
+        // Redirect after a short delay to allow debugging
+        setTimeout(() => {
+            window.location.href = '/ai-dashboard/' + window.location.hash + window.location.search;
+        }, 1000);
+    </script>
 </body>
 </html>

@@ -13,6 +13,10 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onNewRequest, user, onLogout, onAdminClick }) => {
+  // Debug user admin status
+  console.log('Header user:', user?.email, 'isAdmin:', user?.isAdmin);
+  console.log('onAdminClick defined:', !!onAdminClick);
+  console.log('Admin button should show:', user?.isAdmin && !!onAdminClick);
   const getBacklogStatusIcon = (status: string) => {
     switch (status) {
       case 'clear':
@@ -72,6 +76,7 @@ const Header: React.FC<HeaderProps> = ({ onNewRequest, user, onLogout, onAdminCl
               Admin Console
             </button>
           )}
+          
           
           <button 
             onClick={onNewRequest}

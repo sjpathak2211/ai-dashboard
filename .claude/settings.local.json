@@ -19,7 +19,9 @@
       "Bash(cd /Users/shyampathak/Documents/GitHub/ai-dashboard/ai-dashboard-app)",
       "Bash(touch .env.example)",
       "Bash(npm run lint)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(rm:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

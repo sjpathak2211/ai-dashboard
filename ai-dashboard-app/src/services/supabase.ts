@@ -90,17 +90,96 @@ export const authService = {
 
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.log('getCurrentUser: No authenticated user');
+        return null;
+      }
 
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-    
-    if (error || !data) return null;
-    return convertSupabaseUser(data);
+      console.log('getCurrentUser: Auth user found:', user.email);
+      console.log('getCurrentUser: Auth user metadata:', user.user_metadata);
+
+      // First try to get existing user
+      let { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+      
+      console.log('getCurrentUser: Database query result:', { 
+        data: data ? 'found' : 'not found', 
+        error: error?.code,
+        errorMessage: error?.message 
+      });
+      
+      // If user doesn't exist in public.users, create them
+      if (error && error.code === 'PGRST116') {
+        console.log('getCurrentUser: Creating new user in database');
+        console.log('getCurrentUser: User metadata for creation:', {
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.user_metadata?.full_name,
+          picture: user.user_metadata?.picture || user.user_metadata?.avatar_url
+        });
+        
+        // Check if user has required fields from OAuth
+        const userName = user.user_metadata?.name || user.user_metadata?.full_name || user.email?.split('@')[0];
+        
+        if (user.email && userName) {
+          const { data: newUser, error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: user.id,
+              email: user.email,
+              name: userName,
+              picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
+              is_admin: user.email === 'shyam@ascendcohealth.com' || user.email === 'shyam.pathak@ascendcohealth.com'
+            })
+            .select()
+            .single();
+          
+          if (insertError) {
+            console.error('Error creating user:', insertError);
+            // Return a temporary user object for dev purposes
+            return {
+              id: user.id,
+              email: user.email,
+              name: userName,
+              picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
+              isAdmin: user.email === 'shyam@ascendcohealth.com' || user.email === 'shyam.pathak@ascendcohealth.com'
+            };
+          }
+          console.log('getCurrentUser: User created successfully');
+          data = newUser;
+        } else {
+          console.error('User missing required OAuth data:', user);
+          // Return a basic user object anyway
+          return {
+            id: user.id,
+            email: user.email || '',
+            name: userName || 'Unknown User',
+            picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
+            isAdmin: user.email?.includes('shyam') || user.email === 'shyam.pathak@ascendcohealth.com'
+          };
+        }
+      } else if (error) {
+        console.error('Error fetching user:', error);
+        // Return a fallback user object
+        return {
+          id: user.id,
+          email: user.email || '',
+          name: user.user_metadata?.name || user.user_metadata?.full_name || 'Unknown User',
+          picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
+          isAdmin: user.email?.includes('shyam') || user.email === 'shyam.pathak@ascendcohealth.com'
+        };
+      }
+      
+      return data ? convertSupabaseUser(data) : null;
+    } catch (err) {
+      console.error('getCurrentUser: Unexpected error:', err);
+      return null;
+    }
   }
 };
 
@@ -139,8 +218,11 @@ export const requestsService = {
   createRequest: async (request: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
     const user = await supabase.auth.getUser();
     
-    // Use a dev user ID if no authenticated user (for testing with RLS disabled)
-    const userId = user.data.user?.id || '5241162c-4d96-4a7a-b18e-eb9544f9e0d1'; // Default UUID for dev mode
+    if (!user.data.user?.id) {
+      throw new Error('User not authenticated');
+    }
+    
+    const userId = user.data.user.id;
 
     const { data, error } = await supabase
       .from('ai_requests')

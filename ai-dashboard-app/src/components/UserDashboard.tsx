@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Clock, CheckCircle, AlertCircle, TrendingUp, User, Calendar, Activity, Users, Edit2 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import type { AIRequest, User as UserType, ActivityItem } from '../types';
 import { requestsService, activityService, subscriptions } from '../services/supabase';
 import EditRequestModal from './EditRequestModal';
 import './UserDashboard.css';
+
+// Lazy load the chart component
+const ProgressChart = lazy(() => import('./ProgressChart'));
 
 interface UserDashboardProps {
   user: UserType;
@@ -21,10 +23,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
     // Fetch user requests
     const fetchData = async () => {
       try {
-        const requests = await requestsService.getUserRequests(user.id);
-        setUserRequests(requests);
+        // Fetch both in parallel for better performance
+        const [requests, userActivities] = await Promise.all([
+          requestsService.getUserRequests(user.id),
+          activityService.getUserActivities(user.id, 5)
+        ]);
         
-        const userActivities = await activityService.getUserActivities(user.id, 5);
+        setUserRequests(requests);
         setActivities(userActivities);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -236,39 +241,13 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
           <div className="progress-section">
             {activeRequests.length > 0 ? (
               <div className="progress-chart-container">
-                <ResponsiveContainer width="100%" height={300}>
-                  <LineChart data={progressData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                    <XAxis 
-                      dataKey="name" 
-                      stroke="#64748b" 
-                      fontSize={12}
-                      tick={{ fontSize: 12 }}
-                    />
-                    <YAxis 
-                      stroke="#64748b" 
-                      domain={[0, 100]}
-                      tickFormatter={(value) => `${value}%`}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #e2e8f0',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                      }}
-                      formatter={(value: number) => [`${value}%`, 'Progress']}
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="progress" 
-                      stroke="#00BCD4" 
-                      strokeWidth={3}
-                      dot={{ fill: '#00BCD4', strokeWidth: 2, r: 6 }}
-                      activeDot={{ r: 8, stroke: '#00BCD4', strokeWidth: 2 }}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
+                <Suspense fallback={
+                  <div style={{ height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="loading-spinner"></div>
+                  </div>
+                }>
+                  <ProgressChart data={progressData} />
+                </Suspense>
                 
                 <div className="active-requests-details">
                   {activeRequests.map((request) => (

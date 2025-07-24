@@ -7,7 +7,9 @@
     <script>
         // Redirect to the ai-dashboard subdirectory
         // Preserve any auth tokens in the URL hash
-        window.location.href = '/ai-dashboard/' + window.location.hash;
+        const hash = window.location.hash;
+        const search = window.location.search;
+        window.location.replace('/ai-dashboard/' + hash + search);
     </script>
 </head>
 <body>

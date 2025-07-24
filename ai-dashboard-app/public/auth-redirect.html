@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redirecting...</title>
+    <script>
+        // This page handles the OAuth redirect and forwards to the correct location
+        const hash = window.location.hash;
+        const searchParams = window.location.search;
+        
+        // Redirect to the app with the auth tokens
+        window.location.href = '/ai-dashboard/' + hash + searchParams;
+    </script>
+</head>
+<body>
+    <p>Authenticating... Please wait.</p>
+</body>
+</html>

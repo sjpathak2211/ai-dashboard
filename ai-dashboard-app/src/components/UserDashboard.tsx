@@ -24,13 +24,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
     const fetchData = async () => {
       try {
         // Fetch both in parallel for better performance
-        const [requests, userActivities] = await Promise.all([
+        const [requests, allActivities] = await Promise.all([
           requestsService.getUserRequests(user.id),
-          activityService.getUserActivities(user.id, 5)
+          activityService.getRecentActivities(10) // Get ALL recent activities, not just user's
         ]);
         
         setUserRequests(requests);
-        setActivities(userActivities);
+        setActivities(allActivities);
+        console.log('Fetched user requests:', requests.length, requests);
+        console.log('Fetched all activities:', allActivities.length, allActivities);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
@@ -47,10 +49,9 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
       }
     });
 
-    const activitiesChannel = subscriptions.subscribeToActivities((payload) => {
-      if (payload.new?.user_id === user.id) {
-        activityService.getUserActivities(user.id, 5).then(setActivities);
-      }
+    const activitiesChannel = subscriptions.subscribeToActivities(() => {
+      // Update with ALL recent activities, not just user's
+      activityService.getRecentActivities(10).then(setActivities);
     });
 
     return () => {

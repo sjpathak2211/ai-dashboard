@@ -193,8 +193,15 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
                     </div>
                     <button 
                       className="edit-request-button"
-                      onClick={() => handleEditRequest(request)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Button clicked!');
+                        alert('Edit button clicked for: ' + request.title);
+                        handleEditRequest(request);
+                      }}
                       title="Edit request"
+                      type="button"
                     >
                       <Edit2 size={16} />
                     </button>

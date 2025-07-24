@@ -1,29 +1,21 @@
-// Vercel serverless function for Marshal AI
-export default async function handler(req, res) {
-  // Enable CORS
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
-  }
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
-  const { messages, type } = req.body;
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+interface RequestBody {
+  messages: ChatMessage[];
+  type: 'chat' | 'generate';
+}
 
-  if (!ANTHROPIC_API_KEY) {
-    res.status(500).json({ error: 'Anthropic API key not configured' });
-    return;
-  }
-
-  const SYSTEM_PROMPT = `You are Marshal, an AI assistant for Ascendco Health helping users submit AI project requests. Your goal is to gather comprehensive information about their AI initiative through a friendly conversation.
+const SYSTEM_PROMPT = `You are Marshal, an AI assistant for Ascendco Health helping users submit AI project requests. Your goal is to gather comprehensive information about their AI initiative through a friendly conversation.
 
 You should ask about:
 1. The core problem or opportunity they're addressing
@@ -36,7 +28,28 @@ Keep the conversation natural and professional. Ask follow-up questions to get c
 
 Important: Be concise but thorough. Healthcare professionals are busy, so make each question count.`;
 
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   try {
+    const { messages, type }: RequestBody = await req.json()
+    
+    // Get Anthropic API key from environment
+    const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
+    
+    if (!ANTHROPIC_API_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Anthropic API key not configured' }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     let requestBody;
     
     if (type === 'generate') {
@@ -86,8 +99,13 @@ Make sure all field values are strings. Respond with ONLY the JSON object, no ma
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Anthropic API error:', response.status, errorText);
-      res.status(500).json({ error: `Anthropic API error: ${response.status}` });
-      return;
+      return new Response(
+        JSON.stringify({ error: `Anthropic API error: ${response.status}` }),
+        { 
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
     }
 
     const data = await response.json();
@@ -102,22 +120,47 @@ Make sure all field values are strings. Respond with ONLY the JSON object, no ma
           description: String(formFields.description || data.content[0].text),
           estimatedImpact: String(formFields.estimatedImpact || 'To be determined based on further analysis')
         };
-        res.json(cleanedFields);
+        
+        return new Response(
+          JSON.stringify(cleanedFields),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        )
       } catch (error) {
         console.error('JSON parsing error:', error);
         // Fallback if JSON parsing fails
-        res.json({
-          title: 'AI Initiative Request',
-          description: data.content[0].text,
-          estimatedImpact: 'To be determined based on further analysis'
-        });
+        return new Response(
+          JSON.stringify({
+            title: 'AI Initiative Request',
+            description: data.content[0].text,
+            estimatedImpact: 'To be determined based on further analysis'
+          }),
+          { 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200
+          }
+        )
       }
     } else {
       // Return chat response
-      res.json({ response: data.content[0].text });
+      return new Response(
+        JSON.stringify({ response: data.content[0].text }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200
+        }
+      )
     }
   } catch (error) {
-    console.error('API error:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error('Function error:', error)
+    return new Response(
+      JSON.stringify({ error: 'Internal server error' }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
   }
-}
+})

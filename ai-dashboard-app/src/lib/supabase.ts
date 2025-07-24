@@ -1,14 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '../types/supabase';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables. Please check your .env file.');
+  console.error('Missing Supabase environment variables. Authentication features will not work.');
+  // Use placeholder values to prevent crash - auth won't work but app will load
+  const placeholderUrl = 'https://placeholder.supabase.co';
+  const placeholderKey = 'placeholder-key';
+  Object.assign(import.meta.env, {
+    VITE_SUPABASE_URL: placeholderUrl,
+    VITE_SUPABASE_ANON_KEY: placeholderKey
+  });
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(
+  supabaseUrl || import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co',
+  supabaseAnonKey || import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key',
+  {
   auth: {
     autoRefreshToken: true,
     persistSession: true,

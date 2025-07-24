@@ -50,10 +50,8 @@ const convertDbRequest = (dbRequest: any): AIRequest => {
 export const authService = {
   // Sign in with Google
   signInWithGoogle: async () => {
-    // For GitHub Pages, we need to include the subdirectory
-    const baseUrl = window.location.origin;
-    const basePath = window.location.pathname.replace(/\/$/, ''); // Remove trailing slash
-    const redirectTo = baseUrl + (basePath || '/ai-dashboard');
+    // Use a specific auth redirect page that handles the OAuth callback
+    const redirectTo = `${window.location.origin}/ai-dashboard/auth-redirect.html`;
     
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',

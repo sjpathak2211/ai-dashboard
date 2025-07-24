@@ -13,6 +13,7 @@ interface EditRequestModalProps {
 }
 
 const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, request, onUpdate }) => {
+  console.log('EditRequestModal props:', { isOpen, request });
   const [formData, setFormData] = useState({
     description: '',
     department: '' as Department,

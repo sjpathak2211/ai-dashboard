@@ -98,9 +98,15 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, re
   };
 
   return (
-    <AnimatePresence>
+    <AnimatePresence mode="wait">
       {isOpen && request && (
-        <div className="modal-overlay" onClick={onClose}>
+        <motion.div 
+          key="edit-modal-overlay"
+          className="modal-overlay" 
+          onClick={onClose}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}>
         <motion.div 
           className="edit-modal-content"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -219,7 +225,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, re
             </div>
           </form>
         </motion.div>
-      </div>
+      </motion.div>
       )}
     </AnimatePresence>
   );

@@ -368,6 +368,7 @@
   justify-content: center;
   position: relative;
   z-index: 10;
+  pointer-events: auto;
 }
 
 .edit-request-button:hover {

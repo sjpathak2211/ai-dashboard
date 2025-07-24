@@ -342,25 +342,22 @@ function App() {
       </Suspense>
       
       <main className="main-content">
-        {hasRequests ? (
-          <>
-            <Suspense fallback={<div className="metric-card-skeleton" />}>
-              <DashboardOverview 
-                metrics={userMetrics} 
-              />
-            </Suspense>
-            
-            <Suspense fallback={<div className="dashboard-skeleton" />}>
-              <UserDashboard user={user} />
-            </Suspense>
-            
-            <Suspense fallback={<div className="projects-skeleton" />}>
-              <ProjectsSection projects={projects} />
-            </Suspense>
-          </>
-        ) : (
-          <Suspense fallback={<div className="dashboard-skeleton" />}>
-            <UserDashboard user={user} />
+        {/* Always show metrics overview */}
+        <Suspense fallback={<div className="metric-card-skeleton" />}>
+          <DashboardOverview 
+            metrics={userMetrics} 
+          />
+        </Suspense>
+        
+        {/* Always show user dashboard */}
+        <Suspense fallback={<div className="dashboard-skeleton" />}>
+          <UserDashboard user={user} />
+        </Suspense>
+        
+        {/* Only show projects section if user has requests */}
+        {hasRequests && (
+          <Suspense fallback={<div className="projects-skeleton" />}>
+            <ProjectsSection projects={projects} />
           </Suspense>
         )}
       </main>

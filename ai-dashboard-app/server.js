@@ -5,10 +5,38 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-app.use(cors());
+// Configure CORS for production
+const corsOptions = {
+  origin: process.env.FRONTEND_URL || [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    'https://sjpathak2211.github.io'
+  ],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Health check endpoint for monitoring/pinging
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'AI Dashboard Marshal API'
+  });
+});
+
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'AI Dashboard Marshal API Server',
+    health: '/health',
+    endpoints: ['/api/marshal']
+  });
+});
 
 const SYSTEM_PROMPT = `You are Marshal, an AI assistant for Ascendco Health helping users submit AI project requests. Your goal is to gather comprehensive information about their AI initiative through a friendly conversation.
 

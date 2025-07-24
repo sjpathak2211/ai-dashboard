@@ -125,7 +125,7 @@ The application can be deployed to any static hosting service:
 
 Compatible with:
 - Vercel
-- Netlify  
+- Netlify  ..
 - AWS S3 + CloudFront
 - Azure Static Web Apps
 - GitHub Pages

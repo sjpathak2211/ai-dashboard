@@ -31,8 +31,6 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
         
         setUserRequests(requests);
         setActivities(allActivities);
-        console.log('Fetched user requests:', requests.length, requests);
-        console.log('Fetched all activities:', allActivities.length, allActivities);
       } catch (error) {
         console.error('Failed to fetch user data:', error);
       } finally {
@@ -122,6 +120,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
   const progressData = generateProgressData(activeRequests);
 
   const handleEditRequest = (request: AIRequest) => {
+    console.log('Edit button clicked for request:', request);
     setEditingRequest(request);
     setIsEditModalOpen(true);
   };
@@ -176,7 +175,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
       <div className="user-dashboard-content">
         <div className="user-dashboard-section">
           <div className="section-header">
-            <h3>Your Recent Requests</h3>
+            <h3>Your Requests</h3>
             <span className="request-count">{userRequests.length} total requests</span>
           </div>
           

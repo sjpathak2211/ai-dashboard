@@ -33,6 +33,7 @@ jobs:
         VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
         VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         VITE_ANTHROPIC_API_KEY: ${{ secrets.VITE_ANTHROPIC_API_KEY }}
+        VITE_API_URL: ${{ secrets.VITE_API_URL }}
         GITHUB_PAGES: true
       run: |
         cd ai-dashboard-app

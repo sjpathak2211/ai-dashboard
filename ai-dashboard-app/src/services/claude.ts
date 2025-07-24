@@ -11,12 +11,11 @@ export interface FormFields {
 
 // Get the API URL based on environment
 const getApiUrl = () => {
-  // In production, you'll need to deploy your Express server and update this URL
+  // Use environment variable for production API URL
   if (import.meta.env.PROD) {
-    // For GitHub Pages, either:
-    // 1. Deploy server to Heroku/Render and use: 'https://your-server.herokuapp.com/api/marshal'
-    // 2. Or return null to disable the feature
-    return null; // Disabled for GitHub Pages until server is deployed
+    // You can set VITE_API_URL in your GitHub Actions secrets
+    // or in your deployment platform's environment variables
+    return import.meta.env.VITE_API_URL || null;
   }
   return '/api/marshal';
 };
@@ -25,7 +24,7 @@ export const claudeService = {
   async generateFormFields(messages: ChatMessage[]): Promise<FormFields> {
     const apiUrl = getApiUrl();
     if (!apiUrl) {
-      throw new Error('AI assistant is not available in this environment');
+      throw new Error('AI assistant is currently unavailable. Please deploy the API server or set VITE_API_URL.');
     }
     
     try {
@@ -58,7 +57,7 @@ export const claudeService = {
   async getChatResponse(messages: ChatMessage[]): Promise<string> {
     const apiUrl = getApiUrl();
     if (!apiUrl) {
-      throw new Error('AI assistant is not available in this environment');
+      throw new Error('AI assistant is currently unavailable. Please deploy the API server or set VITE_API_URL.');
     }
     
     try {

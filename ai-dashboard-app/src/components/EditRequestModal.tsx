@@ -13,7 +13,6 @@ interface EditRequestModalProps {
 }
 
 const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, request, onUpdate }) => {
-  console.log('EditRequestModal props:', { isOpen, request });
   const [formData, setFormData] = useState({
     description: '',
     department: '' as Department,
@@ -98,11 +97,10 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, re
     }
   };
 
-  if (!isOpen || !request) return null;
-
   return (
     <AnimatePresence>
-      <div className="modal-overlay" onClick={onClose}>
+      {isOpen && request && (
+        <div className="modal-overlay" onClick={onClose}>
         <motion.div 
           className="edit-modal-content"
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -222,6 +220,7 @@ const EditRequestModal: React.FC<EditRequestModalProps> = ({ isOpen, onClose, re
           </form>
         </motion.div>
       </div>
+      )}
     </AnimatePresence>
   );
 };

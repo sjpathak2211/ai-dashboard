@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import type { 
   AIRequest, 
   Project, 
@@ -264,16 +264,54 @@ export const requestsService = {
 
   // Update request (admin or request owner)
   updateRequest: async (requestId: string, updates: Partial<AIRequest>) => {
-    const updateData: any = {};
+    // First get the current request data to track changes
+    const { data: currentRequest } = await supabase
+      .from('ai_requests')
+      .select('*')
+      .eq('id', requestId)
+      .single();
     
-    if (updates.status !== undefined) updateData.status = updates.status;
-    if (updates.progress !== undefined) updateData.progress = updates.progress;
-    if (updates.adminNotes !== undefined) updateData.admin_notes = updates.adminNotes;
-    if (updates.description !== undefined) updateData.description = updates.description;
-    if (updates.department !== undefined) updateData.department = updates.department;
-    if (updates.priority !== undefined) updateData.priority = updates.priority;
-    if (updates.estimatedImpact !== undefined) updateData.estimated_impact = updates.estimatedImpact;
-    if (updates.contactInfo !== undefined) updateData.contact_info = updates.contactInfo;
+    const updateData: any = {};
+    const activityDescriptions: string[] = [];
+    
+    // Track each change for activity logging
+    if (updates.status !== undefined && updates.status !== currentRequest?.status) {
+      updateData.status = updates.status;
+      activityDescriptions.push(`Status changed from "${currentRequest?.status}" to "${updates.status}"`);
+    }
+    if (updates.progress !== undefined && updates.progress !== currentRequest?.progress) {
+      updateData.progress = updates.progress;
+      activityDescriptions.push(`Progress updated from ${currentRequest?.progress}% to ${updates.progress}%`);
+    }
+    if (updates.adminNotes !== undefined && updates.adminNotes !== currentRequest?.admin_notes) {
+      updateData.admin_notes = updates.adminNotes;
+      activityDescriptions.push('Admin notes updated');
+    }
+    if (updates.description !== undefined && updates.description !== currentRequest?.description) {
+      updateData.description = updates.description;
+      activityDescriptions.push('Description updated');
+    }
+    if (updates.department !== undefined && updates.department !== currentRequest?.department) {
+      updateData.department = updates.department;
+      activityDescriptions.push(`Department changed from "${currentRequest?.department}" to "${updates.department}"`);
+    }
+    if (updates.priority !== undefined && updates.priority !== currentRequest?.priority) {
+      updateData.priority = updates.priority;
+      activityDescriptions.push(`Priority changed from "${currentRequest?.priority}" to "${updates.priority}"`);
+    }
+    if (updates.estimatedImpact !== undefined && updates.estimatedImpact !== currentRequest?.estimated_impact) {
+      updateData.estimated_impact = updates.estimatedImpact;
+      activityDescriptions.push('Estimated impact updated');
+    }
+    if (updates.contactInfo !== undefined && updates.contactInfo !== currentRequest?.contact_info) {
+      updateData.contact_info = updates.contactInfo;
+      activityDescriptions.push('Contact information updated');
+    }
+    
+    // Only update if there are actual changes
+    if (Object.keys(updateData).length === 0) {
+      return currentRequest;
+    }
     
     const { data, error } = await supabase
       .from('ai_requests')
@@ -283,6 +321,27 @@ export const requestsService = {
       .single();
     
     if (error) throw error;
+    
+    // Log activities for each change
+    if (activityDescriptions.length > 0) {
+      const user = await getCurrentUser();
+      const activityType = activityDescriptions.length === 1 && activityDescriptions[0].includes('Status') 
+        ? 'status_changed' 
+        : 'request_updated';
+      
+      try {
+        await supabase.rpc('log_activity', {
+          p_type: activityType,
+          p_title: currentRequest?.title || 'Unknown Request',
+          p_description: activityDescriptions.join(', '),
+          p_request_id: requestId,
+          p_user_id: user?.id || currentRequest?.user_id
+        });
+      } catch (activityError) {
+        console.error('Failed to log activity:', activityError);
+      }
+    }
+    
     return data;
   }
 };

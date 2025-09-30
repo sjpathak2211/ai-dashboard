@@ -1,9 +1,10 @@
 import { supabase, getCurrentUser } from '../lib/supabase';
-import type { 
-  AIRequest, 
-  Project, 
-  DashboardMetrics, 
-  ActivityItem, 
+import { isAdminEmail } from '../lib/roles';
+import type {
+  AIRequest,
+  Project,
+  DashboardMetrics,
+  ActivityItem,
   BacklogInfo,
   User,
   ProjectStatus,
@@ -137,7 +138,7 @@ export const authService = {
               email: user.email,
               name: userName,
               picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
-              is_admin: user.email === 'shyam@ascendcohealth.com' || user.email === 'shyam.pathak@ascendcohealth.com'
+              is_admin: isAdminEmail(user.email)
             })
             .select()
             .single();
@@ -150,7 +151,7 @@ export const authService = {
               email: user.email,
               name: userName,
               picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
-              isAdmin: user.email === 'shyam@ascendcohealth.com' || user.email === 'shyam.pathak@ascendcohealth.com'
+              isAdmin: isAdminEmail(user.email)
             };
           }
           console.log('getCurrentUser: User created successfully');
@@ -163,7 +164,7 @@ export const authService = {
             email: user.email || '',
             name: userName || 'Unknown User',
             picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
-            isAdmin: user.email?.includes('shyam') || user.email === 'shyam.pathak@ascendcohealth.com'
+            isAdmin: isAdminEmail(user.email || '')
           };
         }
       } else if (error) {
@@ -174,7 +175,7 @@ export const authService = {
           email: user.email || '',
           name: user.user_metadata?.name || user.user_metadata?.full_name || 'Unknown User',
           picture: user.user_metadata?.picture || user.user_metadata?.avatar_url,
-          isAdmin: user.email?.includes('shyam') || user.email === 'shyam.pathak@ascendcohealth.com'
+          isAdmin: isAdminEmail(user.email || '')
         };
       }
       

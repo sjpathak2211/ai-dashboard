@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Custom font imports */
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-clinical-ghost text-neutral-700 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  /* Focus styles for accessibility */
+  .focus-ring {
+    @apply outline-none ring-2 ring-primary-400 ring-offset-2 focus:ring-2 focus:ring-primary-400 focus:ring-offset-2;
+  }
+
+  /* Clinical card style */
+  .card-clinical {
+    @apply bg-clinical-white rounded-xl shadow-clinical border border-clinical-border;
+  }
+
+  /* Data visualization card */
+  .card-data {
+    @apply bg-clinical-white rounded-xl shadow-data border border-accent-cyan-200/30;
+  }
+}
+
+@layer utilities {
+  /* Text gradient utilities */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-accent-cyan-500 to-accent-coral-500 bg-clip-text text-transparent;
+  }
+
+  /* Glassmorphism utility (use sparingly!) */
+  .glass {
+    @apply bg-white/80 backdrop-blur-lg;
+  }
+}

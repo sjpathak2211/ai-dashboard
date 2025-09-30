@@ -240,7 +240,7 @@ function App() {
     setShowAdminConsole(false);
   };
 
-  const handleSubmitRequest = async (requestData: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
+  const handleSubmitRequest = async (_requestData: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
     if (!user) return;
 
     // Close modal immediately for better UX

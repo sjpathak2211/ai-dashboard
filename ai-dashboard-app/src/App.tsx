@@ -3,6 +3,7 @@ import type { AIRequest, User, Project } from './types';
 import { signOut } from './services/auth';
 import { supabase, authService, projectsService, subscriptions } from './services/supabase';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+import { isAdminEmail } from './lib/roles';
 import './App.css';
 
 // Import critical components directly for faster initial load
@@ -16,9 +17,6 @@ const ProjectsSection = lazy(() => import('./components/ProjectsSection'));
 const AIRequestModal = lazy(() => import('./components/AIRequestModal'));
 const AdminConsole = lazy(() => import('./components/AdminConsole'));
 
-// Lazy load data functions
-const dataModule = () => import('./data/mockData');
-
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
@@ -26,10 +24,9 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [showAdminConsole, setShowAdminConsole] = useState(false);
   
-  // Move these hooks up here - they must be called before any conditional returns
-  const [userRequests, setUserRequests] = useState<AIRequest[]>([]);
+  // Metrics state - we'll load this from Supabase
   const [userMetrics, setUserMetrics] = useState<any>(null);
-  const [dataLoaded, setDataLoaded] = useState(false);
+  const [metricsLoaded, setMetricsLoaded] = useState(false);
 
   // Check for existing session on app load
   useEffect(() => {
@@ -63,7 +60,7 @@ function App() {
                 email: session.user.email || '',
                 name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
                 picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
-                isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+                isAdmin: isAdminEmail(session.user.email || '')
               };
               setUser(fallbackUser);
             }
@@ -75,7 +72,7 @@ function App() {
               email: session.user.email || '',
               name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'User',
               picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
-              isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+              isAdmin: isAdminEmail(session.user.email || '')
             };
             setUser(fallbackUser);
           }
@@ -125,7 +122,7 @@ function App() {
               email: session.user.email || '',
               name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
               picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
-              isAdmin: session.user.email === 'shyam@ascendcohealth.com' || session.user.email === 'shyam.pathak@ascendcohealth.com'
+              isAdmin: isAdminEmail(session.user.email || '')
             };
             setUser(fallbackUser);
           }
@@ -137,7 +134,7 @@ function App() {
             email: session.user.email || '',
             name: session.user.user_metadata?.name || session.user.user_metadata?.full_name || 'User',
             picture: session.user.user_metadata?.picture || session.user.user_metadata?.avatar_url,
-            isAdmin: session.user.email?.includes('shyam') || session.user.email === 'shyam.pathak@ascendcohealth.com'
+            isAdmin: isAdminEmail(session.user.email || '')
           };
           setUser(fallbackUser);
         }
@@ -181,29 +178,33 @@ function App() {
     }
   }, [user]);
 
-  // Load user-specific data
+  // Load metrics from Supabase
   useEffect(() => {
-    if (user) {
-      dataModule()
-        .then(({ getUserRequests, getUserMetrics }) => {
-          const requests = getUserRequests(user.email);
-          const metrics = getUserMetrics(user.email);
-          setUserRequests(requests);
-          setUserMetrics(metrics);
-          setDataLoaded(true);
-        })
-        .catch(error => {
-          console.error('Error loading data module:', error);
-          // Set empty data on error to prevent white screen
-          setUserRequests([]);
-          setUserMetrics({
-            totalRequests: 0,
-            approvedRequests: 0,
-            inProgressRequests: 0,
-            pendingRequests: 0
-          });
-          setDataLoaded(true);
+    const loadMetrics = async () => {
+      if (!user) return;
+
+      try {
+        const { metricsService } = await import('./services/supabase');
+        const metrics = await metricsService.getDashboardMetrics(user.id);
+        setUserMetrics(metrics);
+      } catch (error) {
+        console.error('Error loading metrics:', error);
+        // Set default metrics on error
+        setUserMetrics({
+          totalActiveProjects: 0,
+          yourActiveProjects: 0,
+          deniedRequests: 0,
+          totalRequests: 0,
+          completedRequests: 0,
+          inProgressRequests: 0
         });
+      } finally {
+        setMetricsLoaded(true);
+      }
+    };
+
+    if (user) {
+      loadMetrics();
     }
   }, [user]);
 
@@ -239,26 +240,23 @@ function App() {
     setShowAdminConsole(false);
   };
 
-  const handleSubmitRequest = (requestData: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
+  const handleSubmitRequest = async (requestData: Omit<AIRequest, 'id' | 'submittedAt' | 'userId' | 'userEmail' | 'userName'>) => {
     if (!user) return;
 
-    const newRequest: AIRequest = {
-      ...requestData,
-      id: `req-${Date.now()}`,
-      submittedAt: new Date(),
-      userId: user.id,
-      userEmail: user.email,
-      userName: user.name,
-      progress: 0,
-      lastUpdated: new Date()
-    };
-    
-    // In a real app, this would be sent to your backend API
-    console.log('New AI request submitted:', newRequest);
-    
-    // You could also update local state here to show the new request immediately
-    // For now, we'll just close the modal
+    // Close modal immediately for better UX
     setIsModalOpen(false);
+
+    // The AIRequestModal already saves to Supabase via requestsService.createRequest()
+    // The UserDashboard will automatically refresh via real-time subscriptions
+    // We just need to refresh the metrics
+    try {
+      const { metricsService } = await import('./services/supabase');
+      const metrics = await metricsService.getDashboardMetrics(user.id);
+      setUserMetrics(metrics);
+      console.log('Metrics refreshed after new request submission');
+    } catch (error) {
+      console.error('Error refreshing metrics after submission:', error);
+    }
   };
 
   // Show loading spinner while checking for existing session
@@ -299,25 +297,8 @@ function App() {
     );
   }
 
-  const hasRequests = userRequests.length > 0;
-
-  // Show loading until data is ready (with timeout)
-  if (!dataLoaded && user) {
-    // Add a timeout to prevent infinite loading
-    setTimeout(() => {
-      if (!dataLoaded) {
-        console.error('Data loading timeout - setting defaults');
-        setUserRequests([]);
-        setUserMetrics({
-          totalRequests: 0,
-          approvedRequests: 0,
-          inProgressRequests: 0,
-          pendingRequests: 0
-        });
-        setDataLoaded(true);
-      }
-    }, 2000);
-    
+  // Show loading until metrics are ready
+  if (!metricsLoaded && user) {
     return (
       <div className="app-loading">
         <div className="loading-spinner"></div>
@@ -353,13 +334,11 @@ function App() {
         <Suspense fallback={<div className="dashboard-skeleton" />}>
           <UserDashboard user={user} />
         </Suspense>
-        
-        {/* Only show projects section if user has requests */}
-        {hasRequests && (
-          <Suspense fallback={<div className="projects-skeleton" />}>
-            <ProjectsSection projects={projects} />
-          </Suspense>
-        )}
+
+        {/* Always show projects section */}
+        <Suspense fallback={<div className="projects-skeleton" />}>
+          <ProjectsSection projects={projects} />
+        </Suspense>
       </main>
 
       <Suspense fallback={null}>

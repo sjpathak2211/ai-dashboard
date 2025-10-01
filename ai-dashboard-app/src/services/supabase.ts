@@ -104,17 +104,18 @@ export const authService = {
       console.log('getCurrentUser: Auth user found:', user.email);
       console.log('getCurrentUser: Auth user metadata:', user.user_metadata);
 
-      // First try to get existing user
+      // First try to get existing user by ID
       let { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 or 1 rows
-      
-      console.log('getCurrentUser: Database query result:', { 
-        data: data ? 'found' : 'not found', 
+        .maybeSingle();
+
+      console.log('getCurrentUser: Database query result:', {
+        data: data ? 'found' : 'not found',
         error: error?.code,
-        errorMessage: error?.message 
+        errorMessage: error?.message,
+        authId: user.id
       });
       
       // If user doesn't exist in public.users, create them

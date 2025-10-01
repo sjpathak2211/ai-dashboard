@@ -21,7 +21,7 @@ import { Card } from './ui/Card';
 import { Badge } from './ui/Badge';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
-import { Select } from './ui/Select';
+import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from './ui/Select';
 import { Spinner } from './ui/Spinner';
 
 interface AdminConsoleProps {
@@ -330,9 +330,14 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                 value={backlogInfo.status}
                 onValueChange={(value) => setBacklogInfo(prev => ({ ...prev, status: value as BacklogStatus }))}
               >
-                <option value="clear">Clear - Ready for new requests</option>
-                <option value="busy">Busy - Limited availability</option>
-                <option value="swamped">Swamped - High wait times</option>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clear">Clear - Ready for new requests</SelectItem>
+                  <SelectItem value="busy">Busy - Limited availability</SelectItem>
+                  <SelectItem value="swamped">Swamped - High wait times</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -401,13 +406,18 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                 value={departmentFilter}
                 onValueChange={(value) => setDepartmentFilter(value as Department | 'All')}
               >
-                <option value="All">All Departments</option>
-                <option value="Patient Care">Patient Care</option>
-                <option value="Medical Records">Medical Records</option>
-                <option value="Billing">Billing</option>
-                <option value="Clinical Research">Clinical Research</option>
-                <option value="Operations">Operations</option>
-                <option value="IT Systems">IT Systems</option>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Departments</SelectItem>
+                  <SelectItem value="Patient Care">Patient Care</SelectItem>
+                  <SelectItem value="Medical Records">Medical Records</SelectItem>
+                  <SelectItem value="Billing">Billing</SelectItem>
+                  <SelectItem value="Clinical Research">Clinical Research</SelectItem>
+                  <SelectItem value="Operations">Operations</SelectItem>
+                  <SelectItem value="IT Systems">IT Systems</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -417,10 +427,15 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                 value={priorityFilter}
                 onValueChange={(value) => setPriorityFilter(value as Priority | 'All')}
               >
-                <option value="All">All Priorities</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Priorities</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                </SelectContent>
               </Select>
             </div>
 
@@ -430,13 +445,18 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value as ProjectStatus | 'All')}
               >
-                <option value="All">All Status</option>
-                <option value="Planning">Planning</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Testing">Testing</option>
-                <option value="Complete">Complete</option>
-                <option value="On Hold">On Hold</option>
-                <option value="Denied">Denied</option>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="Planning">Planning</SelectItem>
+                  <SelectItem value="In Progress">In Progress</SelectItem>
+                  <SelectItem value="Testing">Testing</SelectItem>
+                  <SelectItem value="Complete">Complete</SelectItem>
+                  <SelectItem value="On Hold">On Hold</SelectItem>
+                  <SelectItem value="Denied">Denied</SelectItem>
+                </SelectContent>
               </Select>
             </div>
           </div>
@@ -557,12 +577,17 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                             value={request.status}
                             onValueChange={(value) => handleStatusChange(request.id, value as ProjectStatus)}
                           >
-                            <option value="Planning">Planning</option>
-                            <option value="In Progress">In Progress</option>
-                            <option value="Testing">Testing</option>
-                            <option value="Complete">Complete</option>
-                            <option value="On Hold">On Hold</option>
-                            <option value="Denied">Denied</option>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Planning">Planning</SelectItem>
+                              <SelectItem value="In Progress">In Progress</SelectItem>
+                              <SelectItem value="Testing">Testing</SelectItem>
+                              <SelectItem value="Complete">Complete</SelectItem>
+                              <SelectItem value="On Hold">On Hold</SelectItem>
+                              <SelectItem value="Denied">Denied</SelectItem>
+                            </SelectContent>
                           </Select>
                         </div>
 

@@ -2,10 +2,6 @@ import React, { useState } from 'react';
 import type { Project, ProjectStatus } from '../types';
 import { Calendar, Users, Tag, Filter, Search, TrendingUp, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { Card } from './ui/Card';
-import { Badge } from './ui/Badge';
-import { Input } from './ui/Input';
-import { Select } from './ui/Select';
 
 interface ProjectsSectionProps {
   projects: Project[];

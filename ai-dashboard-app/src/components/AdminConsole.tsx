@@ -236,15 +236,6 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
     }
   };
 
-  const getBacklogStatusColor = (status: BacklogStatus) => {
-    switch (status) {
-      case 'clear': return '#22C55E';
-      case 'busy': return '#F59E0B';
-      case 'swamped': return '#EF4444';
-      default: return '#6B7280';
-    }
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -337,8 +328,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
               <label className="text-sm font-semibold text-gray-700">Current Status</label>
               <Select
                 value={backlogInfo.status}
-                onChange={(e) => setBacklogInfo(prev => ({ ...prev, status: e.target.value as BacklogStatus }))}
-                style={{ borderColor: getBacklogStatusColor(backlogInfo.status) }}
+                onValueChange={(value) => setBacklogInfo(prev => ({ ...prev, status: value as BacklogStatus }))}
               >
                 <option value="clear">Clear - Ready for new requests</option>
                 <option value="busy">Busy - Limited availability</option>
@@ -409,7 +399,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Department</label>
               <Select
                 value={departmentFilter}
-                onChange={(e) => setDepartmentFilter(e.target.value as Department | 'All')}
+                onValueChange={(value) => setDepartmentFilter(value as Department | 'All')}
               >
                 <option value="All">All Departments</option>
                 <option value="Patient Care">Patient Care</option>
@@ -425,7 +415,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Priority</label>
               <Select
                 value={priorityFilter}
-                onChange={(e) => setPriorityFilter(e.target.value as Priority | 'All')}
+                onValueChange={(value) => setPriorityFilter(value as Priority | 'All')}
               >
                 <option value="All">All Priorities</option>
                 <option value="High">High</option>
@@ -438,7 +428,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
               <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Status</label>
               <Select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as ProjectStatus | 'All')}
+                onValueChange={(value) => setStatusFilter(value as ProjectStatus | 'All')}
               >
                 <option value="All">All Status</option>
                 <option value="Planning">Planning</option>
@@ -478,7 +468,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                   <div className="flex justify-between items-start gap-3 mb-3">
                     <div className="flex items-center gap-2">
                       {getStatusIcon(request.status)}
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="outline" className="text-xs">
                         {request.department}
                       </Badge>
                     </div>
@@ -565,8 +555,7 @@ const AdminConsole: React.FC<AdminConsoleProps> = ({ onBack }) => {
                           <label className="text-sm font-medium text-gray-700">Status</label>
                           <Select
                             value={request.status}
-                            onChange={(e) => handleStatusChange(request.id, e.target.value as ProjectStatus)}
-                            onClick={(e) => e.stopPropagation()}
+                            onValueChange={(value) => handleStatusChange(request.id, value as ProjectStatus)}
                           >
                             <option value="Planning">Planning</option>
                             <option value="In Progress">In Progress</option>

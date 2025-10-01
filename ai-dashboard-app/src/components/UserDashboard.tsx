@@ -186,7 +186,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
         <Card className="relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary-blue/30 before:to-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-tech-cyan/20">
           <div className="flex justify-between items-center mb-8 pb-4 border-b-2 border-slate-100 relative after:absolute after:bottom-[-2px] after:left-0 after:w-[60px] after:h-[2px] after:bg-gradient-to-r after:from-primary-blue after:to-tech-cyan after:rounded-[1px]">
             <h3 className="text-2xl font-bold text-slate-800 m-0">Your Requests</h3>
-            <Badge variant="secondary" className="text-sm font-semibold bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200">
+            <Badge variant="outline" className="text-sm font-semibold bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200">
               {userRequests.length} total requests
             </Badge>
           </div>
@@ -265,7 +265,7 @@ const UserDashboard: React.FC<UserDashboardProps> = ({ user }) => {
         <Card className="relative overflow-hidden before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-primary-blue/30 before:to-transparent transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(0,0,0,0.08)] hover:border-tech-cyan/20">
           <div className="flex justify-between items-center mb-8 pb-4 border-b-2 border-slate-100 relative after:absolute after:bottom-[-2px] after:left-0 after:w-[60px] after:h-[2px] after:bg-gradient-to-r after:from-primary-blue after:to-tech-cyan after:rounded-[1px]">
             <h3 className="text-2xl font-bold text-slate-800 m-0">Your Request Progress</h3>
-            <Badge variant="secondary" className="text-sm font-semibold bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200">
+            <Badge variant="outline" className="text-sm font-semibold bg-gradient-to-br from-slate-100 to-slate-200 border border-slate-200">
               {activeRequests.length} active
             </Badge>
           </div>

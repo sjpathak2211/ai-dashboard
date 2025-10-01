@@ -109,7 +109,7 @@ export const authService = {
         .from('users')
         .select('*')
         .eq('id', user.id)
-        .single();
+        .maybeSingle(); // Use maybeSingle() instead of single() to handle 0 or 1 rows
       
       console.log('getCurrentUser: Database query result:', { 
         data: data ? 'found' : 'not found', 
@@ -118,7 +118,7 @@ export const authService = {
       });
       
       // If user doesn't exist in public.users, create them
-      if (error && error.code === 'PGRST116') {
+      if (!data && !error) {
         console.log('getCurrentUser: Creating new user in database');
         console.log('getCurrentUser: User metadata for creation:', {
           id: user.id,

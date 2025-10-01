@@ -1,20 +1,18 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import type { AIRequest, User, Project } from './types';
 import { signOut } from './services/auth';
 import { supabase, authService, projectsService, subscriptions } from './services/supabase';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 import { isAdminEmail } from './lib/roles';
 
-// Import critical components directly for faster initial load
+// Import all components directly (removed lazy loading to fix GitHub Pages deployment)
 import Login from './components/Login';
 import Header from './components/Header';
-
-// Lazy load heavy components
-const DashboardOverview = lazy(() => import('./components/DashboardOverview'));
-const UserDashboard = lazy(() => import('./components/UserDashboard'));
-const ProjectsSection = lazy(() => import('./components/ProjectsSection'));
-const AIRequestModal = lazy(() => import('./components/AIRequestModal'));
-const AdminConsole = lazy(() => import('./components/AdminConsole'));
+import DashboardOverview from './components/DashboardOverview';
+import UserDashboard from './components/UserDashboard';
+import ProjectsSection from './components/ProjectsSection';
+import AIRequestModal from './components/AIRequestModal';
+import AdminConsole from './components/AdminConsole';
 
 function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -270,30 +268,12 @@ function App() {
 
   // Show login screen if user is not authenticated
   if (!user) {
-    return (
-      <Suspense fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-clinical-ghost">
-          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin"></div>
-          <p className="mt-4 text-neutral-600">Loading...</p>
-        </div>
-      }>
-        <Login onLogin={handleLogin} />
-      </Suspense>
-    );
+    return <Login onLogin={handleLogin} />;
   }
 
   // Show admin console if requested
   if (showAdminConsole && user?.isAdmin) {
-    return (
-      <Suspense fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-clinical-ghost">
-          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin"></div>
-          <p className="mt-4 text-neutral-600">Loading Admin Console...</p>
-        </div>
-      }>
-        <AdminConsole user={user} onBack={handleBackToDashboard} />
-      </Suspense>
-    );
+    return <AdminConsole user={user} onBack={handleBackToDashboard} />;
   }
 
   // Show loading until metrics are ready
@@ -308,54 +288,27 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-clinical-ghost via-clinical-white to-primary-50">
-      <Suspense fallback={
-        <div className="p-5 text-center">
-          <div className="w-8 h-8 mx-auto border-4 border-primary-200 border-t-primary-500 rounded-full animate-spin"></div>
-        </div>
-      }>
-        <Header
-          onNewRequest={handleNewRequest}
-          user={user}
-          onLogout={handleLogout}
-          onAdminClick={handleAdminClick}
-        />
-      </Suspense>
+      <Header
+        onNewRequest={handleNewRequest}
+        user={user}
+        onLogout={handleLogout}
+        onAdminClick={handleAdminClick}
+      />
 
       <main className="max-w-[1600px] mx-auto px-8 py-8 space-y-8">
-        {/* Always show metrics overview */}
-        <Suspense fallback={
-          <div className="h-48 bg-clinical-light rounded-xl animate-pulse"></div>
-        }>
-          <DashboardOverview 
-            metrics={userMetrics} 
-          />
-        </Suspense>
-
-        {/* Always show user dashboard */}
-        <Suspense fallback={
-          <div className="h-96 bg-clinical-light rounded-xl animate-pulse"></div>
-        }>
-          <UserDashboard user={user} />
-        </Suspense>
-
-        {/* Always show projects section */}
-        <Suspense fallback={
-          <div className="h-64 bg-clinical-light rounded-xl animate-pulse"></div>
-        }>
-          <ProjectsSection projects={projects} />
-        </Suspense>
+        <DashboardOverview metrics={userMetrics} />
+        <UserDashboard user={user} />
+        <ProjectsSection projects={projects} />
       </main>
 
-      <Suspense fallback={null}>
-        {isModalOpen && (
-          <AIRequestModal
-            isOpen={isModalOpen}
-            onClose={handleCloseModal}
-            onSubmit={handleSubmitRequest}
-            user={user}
-          />
-        )}
-      </Suspense>
+      {isModalOpen && (
+        <AIRequestModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmitRequest}
+          user={user}
+        />
+      )}
     </div>
   );
 }

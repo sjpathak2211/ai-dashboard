@@ -1,55 +1,71 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-@layer base {
-  /* Custom font imports */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import "tailwindcss";
 
-  * {
-    @apply border-border;
-  }
+@theme {
+  /* Medical-Tech Fusion Color Palette */
+  --color-primary-50: #e6f2f7;
+  --color-primary-100: #cce5ef;
+  --color-primary-200: #99cbdf;
+  --color-primary-300: #66b1cf;
+  --color-primary-400: #3397bf;
+  --color-primary-500: #2C6B84;
+  --color-primary-600: #235670;
+  --color-primary-700: #1a405c;
+  --color-primary-800: #122b48;
+  --color-primary-900: #091634;
 
-  body {
-    @apply bg-clinical-ghost text-neutral-700 antialiased;
-    font-feature-settings: 'cv11', 'ss01';
-    font-variation-settings: 'opsz' 32;
-  }
+  --color-accent-cyan-50: #e6f9ff;
+  --color-accent-cyan-100: #ccf3ff;
+  --color-accent-cyan-200: #99e7ff;
+  --color-accent-cyan-300: #66dbff;
+  --color-accent-cyan-400: #33cfff;
+  --color-accent-cyan-500: #00BCD4;
+  --color-accent-cyan-600: #0096aa;
+  --color-accent-cyan-700: #007180;
+  --color-accent-cyan-800: #004b56;
+  --color-accent-cyan-900: #00262c;
 
-  html {
-    @apply scroll-smooth;
-  }
-}
+  --color-accent-coral-50: #fff0ed;
+  --color-accent-coral-100: #ffe1db;
+  --color-accent-coral-200: #ffc3b7;
+  --color-accent-coral-300: #ffa593;
+  --color-accent-coral-400: #ff876f;
+  --color-accent-coral-500: #FF6B4A;
+  --color-accent-coral-600: #cc563b;
+  --color-accent-coral-700: #99402c;
+  --color-accent-coral-800: #662b1d;
+  --color-accent-coral-900: #33150f;
 
-@layer components {
-  /* Focus styles for accessibility */
-  .focus-ring {
-    @apply outline-none ring-2 ring-primary-400 ring-offset-2 focus:ring-2 focus:ring-primary-400 focus:ring-offset-2;
-  }
+  --color-clinical-white: #FFFFFF;
+  --color-clinical-ghost: #F8FAFC;
+  --color-clinical-light: #F1F5F9;
+  --color-clinical-border: #E2E8F0;
 
-  /* Clinical card style */
-  .card-clinical {
-    @apply bg-clinical-white rounded-xl shadow-clinical border border-clinical-border;
-  }
+  --color-neutral-50: #F9FAFB;
+  --color-neutral-100: #F3F4F6;
+  --color-neutral-200: #E5E7EB;
+  --color-neutral-300: #D1D5DB;
+  --color-neutral-400: #9CA3AF;
+  --color-neutral-500: #6B7280;
+  --color-neutral-600: #4B5563;
+  --color-neutral-700: #374151;
+  --color-neutral-800: #1F2937;
+  --color-neutral-900: #111827;
 
-  /* Data visualization card */
-  .card-data {
-    @apply bg-clinical-white rounded-xl shadow-data border border-accent-cyan-200/30;
-  }
-}
+  --color-success-light: #D1FAE5;
+  --color-success: #10B981;
+  --color-success-dark: #047857;
 
-@layer utilities {
-  /* Text gradient utilities */
-  .text-gradient-primary {
-    @apply bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent;
-  }
+  --color-warning-light: #FEF3C7;
+  --color-warning: #F59E0B;
+  --color-warning-dark: #D97706;
 
-  .text-gradient-accent {
-    @apply bg-gradient-to-r from-accent-cyan-500 to-accent-coral-500 bg-clip-text text-transparent;
-  }
+  --color-error-light: #FEE2E2;
+  --color-error: #EF4444;
+  --color-error-dark: #DC2626;
 
-  /* Glassmorphism utility (use sparingly!) */
-  .glass {
-    @apply bg-white/80 backdrop-blur-lg;
-  }
+  --color-info-light: #DBEAFE;
+  --color-info: #3B82F6;
+  --color-info-dark: #1D4ED8;
 }
